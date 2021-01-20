@@ -1,6 +1,7 @@
 use std::str::FromStr;
 use std::convert::TryFrom;
 use std::fmt::Display;
+use std::error::Error;
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum ParseStatusError {
@@ -9,7 +10,23 @@ pub enum ParseStatusError {
     MissingErrNr
 }
 
-#[derive(Debug, Eq, PartialEq)]
+impl Display for ParseStatusError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+impl Error for ParseStatusError {
+    fn description(&self) -> &str {
+        match self {
+            Self::InvalidReplyKind => "Invalid reply kind",
+            Self::InvalidCategory => "Invalid error category",
+            Self::MissingErrNr => "Missing or invalid error number"
+        }
+    }
+}
+
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum ReplyKind {
     PositivePreliminary,
     PositiveCompletion,
@@ -45,7 +62,7 @@ impl Display for ReplyKind {
     }
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum Category {
     Syntax,
     Information,
@@ -87,7 +104,7 @@ impl Display for Category {
     }
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Status(pub ReplyKind, pub Category, pub u8);
 
 impl FromStr for Status {
