@@ -3,6 +3,14 @@ name = "redict"
 version = "0.1.0"
 authors = ["Thomas Vigouroux <tomvig38@gmail.com>"]
 edition = "2018"
+license-file = "LICENSE"
+description = "A TUI and library to work with DICT servers."
+homepage = "https://github.com/vigoux/redict"
+repository = "https://github.com/vigoux/redict"
+keywords = ["dict", "protocol", "tui"]
+exclude = [
+  ".github/*"
+]
 
 [lib]
 name = "dictproto"
