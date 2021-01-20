@@ -4,7 +4,8 @@ A TUI and library to work with DICT servers.
 
 # Compliance
 
-This tool is (for now) partly [RFC 229](https://tools.ietf.org/html/rfc2229) :
+This tool is (for now) partly [RFC 229](https://tools.ietf.org/html/rfc2229)
+compliant :
 
 - [x] `DEFINE`
 - [x] `MATCH`
