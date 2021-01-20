@@ -1,3 +1,4 @@
+![redict](https://i.imgur.com/UIl1mRO.jpg)
 # redict
 A TUI and library to work with DICT servers.
 
