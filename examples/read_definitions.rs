@@ -1,5 +1,5 @@
 use std::net::TcpStream;
-use redict::protocol::{
+use dictproto::{
     connection::DICTConnection,
     Database
 };

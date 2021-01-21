@@ -12,6 +12,21 @@ To start `redict` simply do :
 redict {server}:{port}
 ```
 
+## Searching
+
+To search, just type the word you want to find the definition of !
+You also have two useful tools in the search bar :
+
+  - Prefix anything by `@` and it will select a database
+  - Prefix anything by `:` and it will select a matching strategy
+
+Thus :
+```
+word @database :strategy
+```
+
+Means `search "word" in "database" wiht algorithm "strategy"`.
+
 ## Navigating
 
 We can split `redict` screen in 3 parts :

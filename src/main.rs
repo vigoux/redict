@@ -1,5 +1,8 @@
 mod app;
 
+#[macro_use]
+extern crate clap;
+
 use std::io;
 use termion::raw::IntoRawMode;
 use tui::{Terminal, Frame};
@@ -13,6 +16,7 @@ use termion::input::TermRead;
 use termion::screen::AlternateScreen;
 use std::net::TcpStream;
 use app::{App, HistoryMovement, AppMode};
+use dictproto::url::DICTUrl;
 
 fn make_block(name: &str) -> Block {
     Block::default()
@@ -116,13 +120,25 @@ fn handle_key(key: &Key, app: &mut App) {
 }
 
 fn main() -> Result<(), io::Error> {
-    let addr = std::env::args().next_back().unwrap();
-    let stream = TcpStream::connect(addr).expect("Invalid socket address");
+
+    let validate_url = |url: String| -> Result<(), String> {
+        DICTUrl::new(&url).map_err(|e| e.to_string())?;
+        Ok(())
+    };
+
+    let matches = clap_app!(redict =>
+        (version: crate_version!())
+        (author: crate_authors!())
+        (about: "Connect and navigate DICT servers")
+        (@arg SERVER: +required {validate_url} "Url to connect to")
+    ).get_matches();
+
+    let url = matches.value_of("SERVER").unwrap();
 
     let mut stdin = std::io::stdin().keys();
 
     // First answer
-    let mut app = App::new(stream);
+    let mut app = App::new(url);
 
     let stdout = io::stdout().into_raw_mode()?;
     let stdout = AlternateScreen::from(stdout);

@@ -1,6 +1,7 @@
 pub mod connection;
 pub mod reply;
 pub mod status;
+pub mod url;
 
 use std::convert::From;
 use std::default::Default;
@@ -27,11 +28,18 @@ impl Database {
             desc: String::from("All databases")
         }
     }
+
+    pub fn first() -> Self {
+        Database {
+            name: String::from("!"),
+            desc: String::from("All databases (first match)")
+        }
+    }
 }
 
 impl Default for Database {
     fn default() -> Self {
-        Self::all()
+        Self::first()
     }
 }
 
@@ -77,7 +85,10 @@ impl Strategy {
 
 impl Default for Strategy {
     fn default() -> Self {
-        Self::prefix()
+        Self {
+            name: String::from("."),
+            desc: String::from("Server default")
+        }
     }
 }
 

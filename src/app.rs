@@ -1,8 +1,9 @@
-use dictproto::protocol::{
+use dictproto::{
     Definition,
     Database,
     Strategy,
     Match,
+    url::DICTUrl,
     reply::Reply,
     connection::*
 };
@@ -72,6 +73,7 @@ pub struct App {
     pub stategies: Vec<Strategy>,
     pub matches: Vec<Match>,
 
+    msg_id: String,
     mode: AppMode,
     history: History,
     selected_def: usize,
@@ -79,19 +81,44 @@ pub struct App {
     conn: DICTConnection
 }
 
+fn parse_search_bar(src: &String) -> (String, Database, Strategy) {
+    let mut word: String = String::with_capacity(src.len());
+    let mut db: Option<Database> = None;
+    let mut strat: Option<Strategy> = None;
+
+    for part in src.split_whitespace() {
+        match part.get(0..1) {
+            Some("@") if db.is_none() => {
+                db = Some(Database::from(part.get(1..).unwrap().to_string()));
+            },
+            Some(":") if strat.is_none() => {
+                strat = Some(Strategy::from(part.get(1..).unwrap().to_string()));
+            }
+            Some(_) => { 
+                if !word.is_empty() {
+                    word.push_str(" ");
+                }
+                word.push_str(part); },
+            None => {}
+        }
+    }
+
+    (word,
+     db.or(Some(Database::all())).unwrap(),
+     strat.or(Some(Strategy::default())).unwrap())
+}
+
 const SCROLL_AMOUNT: u16 = 10;
 
 impl App {
-    pub fn new(conn: TcpStream) -> Self {
-        // First answer
-        let mut conn = DICTConnection::new(conn).unwrap();
+    pub fn new(addr: &str) -> Self {
+        // Should have been checked in main
+        let url = DICTUrl::new(addr).unwrap();
+        let stream = TcpStream::connect((url.host, url.port)).expect("Invalid socket address");
+        let mut conn = DICTConnection::new(stream).unwrap();
 
         // TODO: Maybe things can fail here... Possibly show status on startup ?
-        let last_status = if let Some(Ok(rep)) = conn.next() {
-            Some(rep.1)
-        } else {
-            None
-        };
+        let (msg_id, last_status) = conn.start().unwrap();
 
         let mut app = App {
             searched: String::new(),
@@ -99,7 +126,8 @@ impl App {
             databases: Vec::new(),
             stategies: Vec::new(),
             matches: Vec::new(),
-            last_status,
+            msg_id,
+            last_status: Some(last_status),
             history: History::new(),
             conn,
             mode: AppMode::Define,
@@ -123,7 +151,9 @@ impl App {
         self.scroll_amount = 0;
         self.selected_def = 0;
 
-        let answer = self.conn.define(Database::all(), (*self.searched).to_owned());
+        let (word, db, _) = parse_search_bar(&self.searched);
+
+        let answer = self.conn.define(db, word);
 
         match answer {
             Ok((defs, status)) => {
@@ -147,7 +177,9 @@ impl App {
         self.scroll_amount = 0;
         self.selected_def = 0;
 
-        let answer = self.conn.match_db(Database::all(), Strategy::default(),(*self.searched).to_owned());
+        let (word, db, start) = parse_search_bar(&self.searched);
+
+        let answer = self.conn.match_db(db, start, word);
 
         match answer {
             Ok((matches, status)) => {

@@ -1,4 +1,4 @@
-use crate::protocol::status::{Status, ParseStatusError};
+use crate::status::{Status, ParseStatusError};
 use std::io::BufRead;
 use std::str::FromStr;
 use std::string::ToString;

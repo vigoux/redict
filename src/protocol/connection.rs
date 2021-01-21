@@ -1,5 +1,5 @@
-use crate::protocol::reply::{Reply, ParseReplyError};
-use crate::protocol::status::{Status, ReplyKind, Category};
+use crate::reply::{Reply, ParseReplyError};
+use crate::status::{Status, ReplyKind, Category};
 use std::io::{Write, BufReader, BufRead, BufWriter};
 use super::{Database, Definition, Strategy, Match};
 use std::convert::From;
@@ -17,14 +17,16 @@ pub enum DICTError {
     MalformedAnswer(&'static str),
 }
 
+pub type DICTResult<T> = Result<(T, Reply), DICTError>;
+
 #[derive(Debug)]
 pub enum DICTPacketKind {
     // Generic
     ReplyOnly,
     OkReply,
 
-    // TODO: coorectly use the information here
-    InitialConnection,
+    // TODO: parse capabilities too
+    InitialConnection(String),
 
     // DEFINE packets
     DefinitionsFollow,
@@ -75,6 +77,15 @@ impl DICTConnection {
         }
 
         text
+    }
+
+    pub fn start(&mut self) -> DICTResult<String> {
+        match self.next().ok_or(DICTError::NoAnswer)?? {
+            DICTPacket(DICTPacketKind::InitialConnection(msg_id), r) => {
+                Ok((msg_id, r))
+            },
+            e => Err(DICTError::UnexpectedPacket(e))
+        }
     }
 
     pub fn client(&mut self, client: String) -> Result<Reply, DICTError> {
@@ -181,7 +192,7 @@ impl DICTConnection {
 }
 
 macro_rules! get_argument {
-    ($arguments:ident, $index:literal, $err:expr) => {
+    ($arguments:ident, $index:expr, $err:expr) => {
         if let Some(arg) = $arguments.get($index) {
             arg
         } else {
@@ -247,12 +258,24 @@ impl Iterator for DICTConnection {
                 Some(Ok(DICTPacket(DICTPacketKind::OkReply, reply)))
             },
 
+            // Connection open
+            Status(
+                ReplyKind::PositiveCompletion,
+                Category::Connection,
+                0
+                ) => {
+                let arguments = reply.text.split_whitespace().collect::<Vec<&str>>();
+
+                let msg_id = get_argument!(arguments, arguments.len() - 1, DICTError::MalformedAnswer("Missing starting text"));
+                Some(Ok(DICTPacket(DICTPacketKind::InitialConnection((*msg_id).to_owned()), reply)))
+            }
+
             // DEFINE Command
             Status(
                 ReplyKind::PositivePreliminary,
                 Category::System,
                 0
-                )=> {
+                ) => {
                 Some(Ok(DICTPacket(DICTPacketKind::DefinitionsFollow, reply)))
             },
             Status(
