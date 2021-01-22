@@ -3,7 +3,7 @@ use dictproto::{
     Database,
     Strategy,
     Match,
-    url::DICTUrl,
+    url::{DICTUrl, DICTUrlAccess},
     reply::Reply,
     connection::*
 };
@@ -139,6 +139,19 @@ impl App {
         app.run_show_dbs();
         app.run_show_strats();
 
+        // Now use the url
+        match url.access_method {
+            DICTUrlAccess::Define(word, db, _) => {
+                app.searched = word.to_owned();
+                app.define_internal(word, db);
+            }
+            DICTUrlAccess::Match(word, db, strat, _) => {
+                app.searched = word.to_owned();
+                app.match_internal(word, db, strat);
+            },
+            _ => {}
+        }
+
         app
     }
 
@@ -146,12 +159,10 @@ impl App {
         self.last_status = self.conn.client("redict".to_owned()).ok();
     }
 
-    pub fn run_define(&mut self) {
+    fn define_internal(&mut self, word: String, db: Database) {
         self.history.push(self.searched.to_owned());
         self.scroll_amount = 0;
         self.selected_def = 0;
-
-        let (word, db, _) = parse_search_bar(&self.searched);
 
         let answer = self.conn.define(db, word);
 
@@ -172,14 +183,17 @@ impl App {
         }
     }
 
-    pub fn run_match(&mut self) {
+    pub fn run_define(&mut self) {
+        let (word, db, _) = parse_search_bar(&self.searched);
+        self.define_internal(word, db);
+    }
+
+    fn match_internal(&mut self, word: String, db: Database, strat: Strategy) {
         self.history.push(self.searched.to_owned());
         self.scroll_amount = 0;
         self.selected_def = 0;
 
-        let (word, db, start) = parse_search_bar(&self.searched);
-
-        let answer = self.conn.match_db(db, start, word);
+        let answer = self.conn.match_db(db, strat, word);
 
         match answer {
             Ok((matches, status)) => {
@@ -196,6 +210,11 @@ impl App {
                 self.last_status = None;
             }
         }
+    }
+
+    pub fn run_match(&mut self) {
+        let (word, db, strat) = parse_search_bar(&self.searched);
+        self.match_internal(word, db, strat);
     }
 
     pub fn run_show_dbs(&mut self) {
