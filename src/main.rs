@@ -1,4 +1,5 @@
 mod app;
+mod searchbar;
 
 #[macro_use]
 extern crate clap;
@@ -14,9 +15,9 @@ use tui::layout::{Layout, Constraint, Direction, Rect};
 use termion::event::Key;
 use termion::input::TermRead;
 use termion::screen::AlternateScreen;
-use std::net::TcpStream;
 use app::{App, HistoryMovement, AppMode};
 use dictproto::url::DICTUrl;
+use searchbar::CursorDirection;
 
 fn make_block(name: &str) -> Block {
     Block::default()
@@ -95,10 +96,10 @@ fn draw_strategies<B: Backend>(f: &mut Frame<B>, rect: Rect, app: &App) {
 
 fn handle_key(key: &Key, app: &mut App) {
     match (app.mode(), key) {
-        (AppMode::Define, Key::Right) => {
+        (AppMode::Define, Key::Ctrl('l')) => {
             app.next_definition();
         },
-        (AppMode::Define, Key::Left) => {
+        (AppMode::Define, Key::Ctrl('h')) => {
             app.previous_definition();
         },
 
@@ -163,9 +164,7 @@ fn main() -> Result<(), io::Error> {
 
 
             // Search bar
-            let block = Paragraph::new(app.searched.to_owned())
-                .block(make_block("Search"));
-            f.render_widget(block, chunks[0]);
+            app.searched.draw(f, chunks[0]);
 
             // Status section
             let block = Paragraph::new(
@@ -210,10 +209,10 @@ fn main() -> Result<(), io::Error> {
                 Key::Esc => { break ;},
 
                 // Scrolling
-                Key::PageUp | Key::Up => {
+                Key::PageUp => {
                     app.scroll_up();
                 },
-                Key::PageDown | Key::Down => {
+                Key::PageDown => {
                     app.scroll_down();
                 },
 
@@ -227,20 +226,26 @@ fn main() -> Result<(), io::Error> {
 
                 // Search management
                 Key::Char(c) if c != '\n' => {
-                    app.searched.push(c);
+                    app.searched.edit(c)
                 },
                 Key::Backspace => {
-                    app.searched.pop();
+                    app.searched.delete()
                 },
                 Key::Ctrl('u') => {
-                    app.searched = String::new();
+                    app.searched.clear()
                 },
+                Key::Left => {
+                    app.searched.move_cursor(CursorDirection::Left)
+                },
+                Key::Right => {
+                    app.searched.move_cursor(CursorDirection::Right)
+                }
 
                 // History management
-                Key::Ctrl('h') => {
+                Key::Down => {
                     app.history_goto(HistoryMovement::Previous);
                 },
-                Key::Ctrl('l') => {
+                Key::Up => {
                     app.history_goto(HistoryMovement::Next);
                 }
 

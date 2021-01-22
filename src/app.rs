@@ -1,3 +1,5 @@
+use crate::searchbar::SearchBar;
+
 use dictproto::{
     Definition,
     Database,
@@ -64,7 +66,7 @@ impl AppMode {
 }
 
 pub struct App {
-    pub searched: String,
+    pub searched: SearchBar,
 
     // To display things
     pub results: Vec<Definition>,
@@ -121,7 +123,7 @@ impl App {
         let (msg_id, last_status) = conn.start().unwrap();
 
         let mut app = App {
-            searched: String::new(),
+            searched: SearchBar::default(),
             results: vec![Definition::empty()],
             databases: Vec::new(),
             stategies: Vec::new(),
@@ -142,11 +144,11 @@ impl App {
         // Now use the url
         match url.access_method {
             DICTUrlAccess::Define(word, db, _) => {
-                app.searched = word.to_owned();
+                app.searched.set_text(&word);
                 app.define_internal(word, db);
             }
             DICTUrlAccess::Match(word, db, strat, _) => {
-                app.searched = word.to_owned();
+                app.searched.set_text(&word);
                 app.match_internal(word, db, strat);
             },
             _ => {}
@@ -160,7 +162,7 @@ impl App {
     }
 
     fn define_internal(&mut self, word: String, db: Database) {
-        self.history.push(self.searched.to_owned());
+        self.history.push(self.searched.text().to_owned());
         self.scroll_amount = 0;
         self.selected_def = 0;
 
@@ -184,12 +186,12 @@ impl App {
     }
 
     pub fn run_define(&mut self) {
-        let (word, db, _) = parse_search_bar(&self.searched);
+        let (word, db, _) = parse_search_bar(self.searched.text());
         self.define_internal(word, db);
     }
 
     fn match_internal(&mut self, word: String, db: Database, strat: Strategy) {
-        self.history.push(self.searched.to_owned());
+        self.history.push(self.searched.text().to_owned());
         self.scroll_amount = 0;
         self.selected_def = 0;
 
@@ -213,7 +215,7 @@ impl App {
     }
 
     pub fn run_match(&mut self) {
-        let (word, db, strat) = parse_search_bar(&self.searched);
+        let (word, db, strat) = parse_search_bar(self.searched.text());
         self.match_internal(word, db, strat);
     }
 
@@ -325,7 +327,7 @@ impl App {
     pub fn history_goto(&mut self, m: HistoryMovement) {
         self.history.goto(m);
         if let Some(s) = self.history.current() {
-            self.searched = s.to_owned();
+            self.searched.set_text(s);
         } else {
             self.search_reset();
         }

@@ -41,14 +41,16 @@ There are generic key bindings :
 | Key | Action |
 |-----|--------|
 | `Esc` | Exit `redict` |
-| `PageUp` / `Up` | Scroll up in the tab page |
-| `PageDown` / `Down` | Scroll down in the tab page |
+| `PageUp` | Scroll up in the tab page |
+| `PageDown` | Scroll down in the tab page |
 | `Tab` | Go to next mode |
 | `BackTab` | Go to previous mode |
-| `CTRL-h` | Go up in `Search` bar history |
-| `CTRL-l` | Go down in `Search` bar history |
+| `Up` | Go up in `Search` bar history |
+| `Down` | Go down in `Search` bar history |
 | `CTRL-u` | Empty search bar |
 | `Enter` | Refreshes current mode, possibly using the currently searched term |
+| `Left` | Move search bar cursor to the left |
+| `Right` | Move search bar cursor to the right |
 
 Moreover, you can use your keyboard to edit the search bar direclty,
 that is anything typed will be added to the search bar.
@@ -62,7 +64,7 @@ informations about the server.
 
 Shows the definition on the currently searched term.
 
-You can you `Left` and `Right` to navigate definitions.
+You can you `CTRL-h` and `CTRL-l` to navigate definitions.
 
 Definitions are listed in the `Sources` bar, at the very bottom of the
 screen.
