@@ -137,7 +137,7 @@ impl DICTConnection {
 
     pub fn match_db(&mut self, db: Database, strat: Strategy, word: String)
     -> Result<(Vec<Match>, Reply), DICTError> {
-        writeln!(self.output, "MATCH {} {} {}", db.name, strat.name, word)?;
+        writeln!(self.output, "MATCH \"{}\" \"{}\" \"{}\"", db.name, strat.name, word)?;
         self.output.flush()?;
 
         match self.next().ok_or(DICTError::NoAnswer)?? {
