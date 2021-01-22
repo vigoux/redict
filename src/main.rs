@@ -164,7 +164,7 @@ fn main() -> Result<(), io::Error> {
 
 
             // Search bar
-            app.searched.draw(f, chunks[0]);
+            app.searched.draw(f, chunks[0], make_block("Search"));
 
             // Status section
             let block = Paragraph::new(

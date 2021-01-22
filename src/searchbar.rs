@@ -27,7 +27,7 @@ impl Default for SearchBar {
 }
 
 impl SearchBar {
-    pub fn draw<B: Backend>(&self, f: &mut Frame<B>, rect: Rect) {
+    pub fn draw<B: Backend>(&self, f: &mut Frame<B>, rect: Rect, block: Block) {
 
         let (before_cursor, at_cursor, after_cursor) : (&str, &str, &str) = match self.cursor_indices() {
             (Some(cursor_index), Some(after_cursor_index)) => {
@@ -46,7 +46,7 @@ impl SearchBar {
             Span::raw(after_cursor)
         ]);
 
-        let par = Paragraph::new(spans).block(Block::default().borders(Borders::ALL));
+        let par = Paragraph::new(spans).block(block);
         f.render_widget(par, rect);
     }
 
@@ -67,6 +67,15 @@ impl SearchBar {
         self.text.graphemes(true).count()
     }
 
+    pub fn text(&self) -> &String {
+        &self.text
+    }
+
+    pub fn cursor(&self) -> usize {
+        self.cursor
+    }
+
+    // Cursor manipulation
     pub fn move_cursor(&mut self, dir: CursorDirection) {
         match dir {
             CursorDirection::Left => {
@@ -82,6 +91,11 @@ impl SearchBar {
         }
     }
 
+    pub fn set_cursor(&mut self, index: usize) {
+        self.cursor = index.min(self.graphemes_nr());
+    }
+
+    // Text manipulation
     pub fn edit(&mut self, c: char) {
         if let (Some(cursor_start), _) = self.cursor_indices() {
             self.text.insert(cursor_start, c);
@@ -105,10 +119,6 @@ impl SearchBar {
             (None, None) => { self.text.pop(); }
             _ => { return; }
         }
-    }
-
-    pub fn text(&self) -> &String {
-        &self.text
     }
 
     pub fn set_text<T>(&mut self, text: &T)
