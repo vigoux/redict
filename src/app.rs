@@ -275,8 +275,13 @@ impl App {
     }
 
     pub fn scroll_down(&mut self) {
-        if (self.scroll_amount as usize)
-            < self.results[self.selected_def].text.len() - SCROLL_AMOUNT as usize {
+        let max_scroll = match self.mode {
+            AppMode::Define => self.results[self.selected_def].text.len(),
+            AppMode::Match => self.matches.len(),
+            _ => 0
+        };
+
+        if ((self.scroll_amount  + SCROLL_AMOUNT) as usize) < max_scroll {
             self.scroll_amount += SCROLL_AMOUNT;
         }
     }
