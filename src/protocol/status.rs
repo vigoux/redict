@@ -1,13 +1,13 @@
-use std::str::FromStr;
 use std::convert::TryFrom;
-use std::fmt::Display;
 use std::error::Error;
+use std::fmt::Display;
+use std::str::FromStr;
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum ParseStatusError {
     InvalidReplyKind,
     InvalidCategory,
-    MissingErrNr
+    MissingErrNr,
 }
 
 impl Display for ParseStatusError {
@@ -21,7 +21,7 @@ impl Error for ParseStatusError {
         match self {
             Self::InvalidReplyKind => "Invalid reply kind",
             Self::InvalidCategory => "Invalid error category",
-            Self::MissingErrNr => "Missing or invalid error number"
+            Self::MissingErrNr => "Missing or invalid error number",
         }
     }
 }
@@ -32,7 +32,7 @@ pub enum ReplyKind {
     PositiveCompletion,
     PositiveIntermediate,
     NegativeTransient,
-    NegativePermanent
+    NegativePermanent,
 }
 
 impl TryFrom<char> for ReplyKind {
@@ -45,20 +45,24 @@ impl TryFrom<char> for ReplyKind {
             '3' => Ok(ReplyKind::PositiveIntermediate),
             '4' => Ok(ReplyKind::NegativeTransient),
             '5' => Ok(ReplyKind::NegativePermanent),
-            _ => Err(ParseStatusError::InvalidReplyKind)
+            _ => Err(ParseStatusError::InvalidReplyKind),
         }
     }
 }
 
 impl Display for ReplyKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", match self {
-            ReplyKind::PositivePreliminary => '1',
-            ReplyKind::PositiveCompletion => '2',
-            ReplyKind::PositiveIntermediate => '3',
-            ReplyKind::NegativeTransient => '4',
-            ReplyKind::NegativePermanent => '5'
-        })
+        write!(
+            f,
+            "{}",
+            match self {
+                ReplyKind::PositivePreliminary => '1',
+                ReplyKind::PositiveCompletion => '2',
+                ReplyKind::PositiveIntermediate => '3',
+                ReplyKind::NegativeTransient => '4',
+                ReplyKind::NegativePermanent => '5',
+            }
+        )
     }
 }
 
@@ -70,7 +74,7 @@ pub enum Category {
     Authentication,
     Unspecified,
     System,
-    Nonstandard
+    Nonstandard,
 }
 
 impl TryFrom<char> for Category {
@@ -85,22 +89,26 @@ impl TryFrom<char> for Category {
             '4' => Ok(Category::Unspecified),
             '5' => Ok(Category::System),
             '8' => Ok(Category::Nonstandard),
-            _ => Err(ParseStatusError::InvalidCategory)
+            _ => Err(ParseStatusError::InvalidCategory),
         }
     }
 }
 
 impl Display for Category {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", match self {
-            Category::Syntax => '0',
-            Category::Information => '1',
-            Category::Connection => '2',
-            Category::Authentication => '3',
-            Category::Unspecified => '4',
-            Category::System => '5',
-            Category::Nonstandard => '8'
-        })
+        write!(
+            f,
+            "{}",
+            match self {
+                Category::Syntax => '0',
+                Category::Information => '1',
+                Category::Connection => '2',
+                Category::Authentication => '3',
+                Category::Unspecified => '4',
+                Category::System => '5',
+                Category::Nonstandard => '8',
+            }
+        )
     }
 }
 
@@ -122,7 +130,11 @@ impl FromStr for Status {
             return Err(ParseStatusError::MissingErrNr);
         };
 
-        Ok(Status(ReplyKind::try_from(*reply)?, Category::try_from(*category)?, errnr))
+        Ok(Status(
+            ReplyKind::try_from(*reply)?,
+            Category::try_from(*category)?,
+            errnr,
+        ))
     }
 }
 
@@ -136,9 +148,9 @@ impl Status {
     pub fn is_positive(&self) -> bool {
         match self.0 {
             ReplyKind::PositiveCompletion
-                | ReplyKind::PositiveIntermediate
-                | ReplyKind::PositivePreliminary => true,
-            _ => false
+            | ReplyKind::PositiveIntermediate
+            | ReplyKind::PositivePreliminary => true,
+            _ => false,
         }
     }
 
@@ -155,7 +167,10 @@ mod test {
     fn basic_parsing() {
         let ok = Status::from_str("250").unwrap();
 
-        assert_eq!(ok, Status(ReplyKind::PositiveCompletion, Category::System, 0));
+        assert_eq!(
+            ok,
+            Status(ReplyKind::PositiveCompletion, Category::System, 0)
+        );
     }
 
     #[test]

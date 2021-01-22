@@ -9,14 +9,14 @@ use std::default::Default;
 #[derive(Debug)]
 pub struct Database {
     pub name: String,
-    pub desc: String
+    pub desc: String,
 }
 
 impl From<String> for Database {
     fn from(src: String) -> Self {
         Self {
             name: src,
-            desc: String::new()
+            desc: String::new(),
         }
     }
 }
@@ -25,14 +25,14 @@ impl Database {
     pub fn all() -> Self {
         Database {
             name: String::from("*"),
-            desc: String::from("All databases")
+            desc: String::from("All databases"),
         }
     }
 
     pub fn first() -> Self {
         Database {
             name: String::from("!"),
-            desc: String::from("All databases (first match)")
+            desc: String::from("All databases (first match)"),
         }
     }
 }
@@ -46,14 +46,14 @@ impl Default for Database {
 #[derive(Debug)]
 pub struct Definition {
     pub source: Database,
-    pub text: Vec<String>
+    pub text: Vec<String>,
 }
 
 impl Definition {
     pub fn empty() -> Self {
         Definition {
             source: Database::all(),
-            text: vec![String::from("No definition")]
+            text: vec![String::from("No definition")],
         }
     }
 }
@@ -61,14 +61,14 @@ impl Definition {
 #[derive(Debug)]
 pub struct Strategy {
     pub name: String,
-    pub desc: String
+    pub desc: String,
 }
 
 impl From<String> for Strategy {
     fn from(src: String) -> Self {
         Strategy {
             name: src,
-            desc: String::new()
+            desc: String::new(),
         }
     }
 }
@@ -87,7 +87,7 @@ impl Default for Strategy {
     fn default() -> Self {
         Self {
             name: String::from("."),
-            desc: String::from("Server default")
+            desc: String::from("Server default"),
         }
     }
 }
@@ -95,5 +95,5 @@ impl Default for Strategy {
 #[derive(Debug)]
 pub struct Match {
     pub source: Database,
-    pub word: String
+    pub word: String,
 }

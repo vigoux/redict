@@ -1,9 +1,9 @@
-use std::error::Error;
-use std::fmt::{Formatter, Display};
-use std::convert::From;
-use std::str::FromStr;
 use crate::{Database, Strategy};
-use url::{Url, ParseError};
+use std::convert::From;
+use std::error::Error;
+use std::fmt::{Display, Formatter};
+use std::str::FromStr;
+use url::{ParseError, Url};
 
 #[derive(Debug)]
 pub enum DICTUrlError {
@@ -11,18 +11,22 @@ pub enum DICTUrlError {
     UnknownAccess(String),
     MissingParameters,
     MissingHost,
-    Unsupported(&'static str)
+    Unsupported(&'static str),
 }
 
 impl Display for DICTUrlError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", match self {
-            Self::ParseError(_) => "Parse error",
-            Self::Unsupported(_) => "Unsuported",
-            Self::UnknownAccess(_) => "Unknown access method",
-            Self::MissingParameters => "Missing parameters",
-            Self::MissingHost => "Missing host"
-        })
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::ParseError(_) => "Parse error",
+                Self::Unsupported(_) => "Unsuported",
+                Self::UnknownAccess(_) => "Unknown access method",
+                Self::MissingParameters => "Missing parameters",
+                Self::MissingHost => "Missing host",
+            }
+        )
     }
 }
 
@@ -32,13 +36,12 @@ impl From<ParseError> for DICTUrlError {
     }
 }
 
-impl Error for DICTUrlError {
-}
+impl Error for DICTUrlError {}
 
 pub enum DICTUrlAccess {
     AccessOnly,
     Define(String, Database, Option<usize>),
-    Match(String, Database, Strategy, Option<usize>)
+    Match(String, Database, Strategy, Option<usize>),
 }
 
 impl FromStr for DICTUrlAccess {
@@ -57,12 +60,14 @@ impl FromStr for DICTUrlAccess {
             Some("d") => {
                 let word = match parts.next() {
                     Some(w) if !w.is_empty() => w.to_string(),
-                    _ => { return Err(DICTUrlError::MissingParameters); }
+                    _ => {
+                        return Err(DICTUrlError::MissingParameters);
+                    }
                 };
 
                 let db = match parts.next() {
                     Some(d) if !d.is_empty() => Database::from(d.to_string()),
-                    _ => Database::default()
+                    _ => Database::default(),
                 };
 
                 let nr = if let Some(maybe_n) = parts.next() {
@@ -76,21 +81,23 @@ impl FromStr for DICTUrlAccess {
                 };
 
                 Ok(DICTUrlAccess::Define(word, db, nr))
-            },
+            }
             Some("m") => {
                 let word = match parts.next() {
                     Some(w) if !w.is_empty() => w.to_string(),
-                    _ => { return Err(DICTUrlError::MissingParameters); }
+                    _ => {
+                        return Err(DICTUrlError::MissingParameters);
+                    }
                 };
 
                 let db = match parts.next() {
                     Some(d) if !d.is_empty() => Database::from(d.to_string()),
-                    _ => Database::default()
+                    _ => Database::default(),
                 };
 
                 let strat = match parts.next() {
                     Some(s) if !s.is_empty() => Strategy::from(s.to_string()),
-                    _ => Strategy::default()
+                    _ => Strategy::default(),
                 };
 
                 let nr = if let Some(maybe_n) = parts.next() {
@@ -105,7 +112,7 @@ impl FromStr for DICTUrlAccess {
 
                 Ok(DICTUrlAccess::Match(word, db, strat, nr))
             }
-            Some(s) => Err(DICTUrlError::UnknownAccess(s.to_string()))
+            Some(s) => Err(DICTUrlError::UnknownAccess(s.to_string())),
         }
     }
 }
@@ -124,11 +131,18 @@ impl DICTUrl {
             return Err(DICTUrlError::Unsupported("Auth part is not supported"));
         }
 
-        let host: String = raw_url.host_str().ok_or(DICTUrlError::MissingHost)?.to_string();
+        let host: String = raw_url
+            .host_str()
+            .ok_or(DICTUrlError::MissingHost)?
+            .to_string();
         let port: u16 = raw_url.port().or(Some(2628)).unwrap();
         let access_method = DICTUrlAccess::from_str(raw_url.path())?;
 
-        Ok(DICTUrl { host, port, access_method })
+        Ok(DICTUrl {
+            host,
+            port,
+            access_method,
+        })
     }
 }
 

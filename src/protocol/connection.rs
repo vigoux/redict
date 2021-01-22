@@ -1,8 +1,8 @@
-use crate::reply::{Reply, ParseReplyError};
-use crate::status::{Status, ReplyKind, Category};
-use std::io::{Write, BufReader, BufRead, BufWriter};
-use super::{Database, Definition, Strategy, Match};
+use super::{Database, Definition, Match, Strategy};
+use crate::reply::{ParseReplyError, Reply};
+use crate::status::{Category, ReplyKind, Status};
 use std::convert::From;
+use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::net::TcpStream;
 
 #[derive(Debug)]
@@ -37,9 +37,7 @@ pub enum DICTPacketKind {
 
     // SHOW packets
     Databases(Vec<Database>),
-    Strategies(Vec<Strategy>)
-
-    // TODO: There is way more specific packets
+    Strategies(Vec<Strategy>), // TODO: There is way more specific packets
 }
 
 #[derive(Debug)]
@@ -47,16 +45,15 @@ pub struct DICTPacket(pub DICTPacketKind, pub Reply);
 
 pub struct DICTConnection {
     input: BufReader<TcpStream>,
-    output: BufWriter<TcpStream>
+    output: BufWriter<TcpStream>,
 }
 
 impl DICTConnection {
-
     pub fn new(inner: TcpStream) -> std::io::Result<Self> {
         let input = BufReader::new(inner.try_clone()?);
         Ok(DICTConnection {
             input,
-            output: BufWriter::new(inner)
+            output: BufWriter::new(inner),
         })
     }
 
@@ -81,10 +78,8 @@ impl DICTConnection {
 
     pub fn start(&mut self) -> DICTResult<String> {
         match self.next().ok_or(DICTError::NoAnswer)?? {
-            DICTPacket(DICTPacketKind::InitialConnection(msg_id), r) => {
-                Ok((msg_id, r))
-            },
-            e => Err(DICTError::UnexpectedPacket(e))
+            DICTPacket(DICTPacketKind::InitialConnection(msg_id), r) => Ok((msg_id, r)),
+            e => Err(DICTError::UnexpectedPacket(e)),
         }
     }
 
@@ -94,12 +89,15 @@ impl DICTConnection {
 
         match self.next().ok_or(DICTError::NoAnswer)?? {
             DICTPacket(DICTPacketKind::OkReply, r) => Ok(r),
-            e => Err(DICTError::UnexpectedPacket(e))
+            e => Err(DICTError::UnexpectedPacket(e)),
         }
     }
 
-    pub fn define(&mut self, database: Database, word: String)
-    -> Result<(Vec<Definition>, Reply), DICTError> {
+    pub fn define(
+        &mut self,
+        database: Database,
+        word: String,
+    ) -> Result<(Vec<Definition>, Reply), DICTError> {
         writeln!(self.output, "DEFINE \"{}\" \"{}\"", database.name, word)?;
         self.output.flush()?;
 
@@ -107,7 +105,7 @@ impl DICTConnection {
 
         // start of answer
         match reply {
-            DICTPacket(DICTPacketKind::DefinitionsFollow, _) => {},
+            DICTPacket(DICTPacketKind::DefinitionsFollow, _) => {}
             p => {
                 return Err(DICTError::UnexpectedPacket(p));
             }
@@ -119,7 +117,7 @@ impl DICTConnection {
             match p {
                 Ok(DICTPacket(DICTPacketKind::Definition(def), _)) => {
                     defs.push(def);
-                },
+                }
                 Ok(DICTPacket(DICTPacketKind::OkReply, _)) => {
                     break;
                 }
@@ -128,16 +126,24 @@ impl DICTConnection {
                 }
                 Err(e) => {
                     return Err(e);
-                },
+                }
             }
-        };
+        }
 
         Ok((defs, reply.1))
     }
 
-    pub fn match_db(&mut self, db: Database, strat: Strategy, word: String)
-    -> Result<(Vec<Match>, Reply), DICTError> {
-        writeln!(self.output, "MATCH \"{}\" \"{}\" \"{}\"", db.name, strat.name, word)?;
+    pub fn match_db(
+        &mut self,
+        db: Database,
+        strat: Strategy,
+        word: String,
+    ) -> Result<(Vec<Match>, Reply), DICTError> {
+        writeln!(
+            self.output,
+            "MATCH \"{}\" \"{}\" \"{}\"",
+            db.name, strat.name, word
+        )?;
         self.output.flush()?;
 
         match self.next().ok_or(DICTError::NoAnswer)?? {
@@ -149,8 +155,8 @@ impl DICTConnection {
                 } else {
                     Err(DICTError::UnexpectedPacket(ok))
                 }
-            },
-            e => Err(DICTError::UnexpectedPacket(e))
+            }
+            e => Err(DICTError::UnexpectedPacket(e)),
         }
     }
 
@@ -167,8 +173,8 @@ impl DICTConnection {
                 } else {
                     Err(DICTError::UnexpectedPacket(ok))
                 }
-            },
-            e => Err(DICTError::UnexpectedPacket(e))
+            }
+            e => Err(DICTError::UnexpectedPacket(e)),
         }
     }
 
@@ -185,8 +191,8 @@ impl DICTConnection {
                 } else {
                     Err(DICTError::UnexpectedPacket(ok))
                 }
-            },
-            e => Err(DICTError::UnexpectedPacket(e))
+            }
+            e => Err(DICTError::UnexpectedPacket(e)),
         }
     }
 }
@@ -245,49 +251,50 @@ impl Iterator for DICTConnection {
     fn next(&mut self) -> Option<Self::Item> {
         let reply = match Reply::from_reader(&mut self.input) {
             Ok(rep) => rep,
-            Err(e) => { return Some(Err(DICTError::ReplyError(e))); }
+            Err(e) => {
+                return Some(Err(DICTError::ReplyError(e)));
+            }
         };
 
         match reply.status {
             // Generic
-            Status(
-                ReplyKind::PositiveCompletion,
-                Category::System,
-                0
-                ) => {
+            Status(ReplyKind::PositiveCompletion, Category::System, 0) => {
                 Some(Ok(DICTPacket(DICTPacketKind::OkReply, reply)))
-            },
+            }
 
             // Connection open
-            Status(
-                ReplyKind::PositiveCompletion,
-                Category::Connection,
-                0
-                ) => {
+            Status(ReplyKind::PositiveCompletion, Category::Connection, 0) => {
                 let arguments = reply.text.split_whitespace().collect::<Vec<&str>>();
 
-                let msg_id = get_argument!(arguments, arguments.len() - 1, DICTError::MalformedAnswer("Missing starting text"));
-                Some(Ok(DICTPacket(DICTPacketKind::InitialConnection((*msg_id).to_owned()), reply)))
+                let msg_id = get_argument!(
+                    arguments,
+                    arguments.len() - 1,
+                    DICTError::MalformedAnswer("Missing starting text")
+                );
+                Some(Ok(DICTPacket(
+                    DICTPacketKind::InitialConnection((*msg_id).to_owned()),
+                    reply,
+                )))
             }
 
             // DEFINE Command
-            Status(
-                ReplyKind::PositivePreliminary,
-                Category::System,
-                0
-                ) => {
+            Status(ReplyKind::PositivePreliminary, Category::System, 0) => {
                 Some(Ok(DICTPacket(DICTPacketKind::DefinitionsFollow, reply)))
-            },
-            Status(
-                ReplyKind::PositivePreliminary,
-                Category::System,
-                1
-                ) => {
+            }
+            Status(ReplyKind::PositivePreliminary, Category::System, 1) => {
                 // Definition
 
                 let arguments = parse_cmd_argument(&reply.text);
-                let dbname = get_argument!(arguments, 1, DICTError::MalformedAnswer("Missing database name"));
-                let dbdesc = get_argument!(arguments, 2, DICTError::MalformedAnswer("Missing database description"));
+                let dbname = get_argument!(
+                    arguments,
+                    1,
+                    DICTError::MalformedAnswer("Missing database name")
+                );
+                let dbdesc = get_argument!(
+                    arguments,
+                    2,
+                    DICTError::MalformedAnswer("Missing database description")
+                );
 
                 let text = self.read_raw_text();
 
@@ -296,77 +303,88 @@ impl Iterator for DICTConnection {
                         name: String::from(dbname),
                         desc: String::from(dbdesc),
                     },
-                    text
+                    text,
                 };
 
                 Some(Ok(DICTPacket(DICTPacketKind::Definition(def), reply)))
             }
 
             // MATCH command
-            Status(
-                ReplyKind::PositivePreliminary,
-                Category::System,
-                2
-                ) => {
+            Status(ReplyKind::PositivePreliminary, Category::System, 2) => {
                 let mut matches: Vec<Match> = Vec::new();
                 for match_def in self.read_raw_text() {
                     let arguments = parse_cmd_argument(&match_def);
-                    let dbname = get_argument!(arguments, 0, DICTError::MalformedAnswer("Missing database name"));
-                    let word = get_argument!(arguments, 1, DICTError::MalformedAnswer("Missing database description"));
+                    let dbname = get_argument!(
+                        arguments,
+                        0,
+                        DICTError::MalformedAnswer("Missing database name")
+                    );
+                    let word = get_argument!(
+                        arguments,
+                        1,
+                        DICTError::MalformedAnswer("Missing database description")
+                    );
 
                     matches.push(Match {
                         source: Database::from(dbname.to_owned()),
-                        word: word.to_owned()
+                        word: word.to_owned(),
                     });
                 }
 
                 Some(Ok(DICTPacket(DICTPacketKind::Matches(matches), reply)))
-            },
-
+            }
 
             // SHOW DB command
-            Status(
-                ReplyKind::PositivePreliminary,
-                Category::Information,
-                0
-                ) => {
+            Status(ReplyKind::PositivePreliminary, Category::Information, 0) => {
                 let mut dbs: Vec<Database> = Vec::new();
                 for db_def in self.read_raw_text() {
                     let arguments = parse_cmd_argument(&db_def);
-                    let name = get_argument!(arguments, 0, DICTError::MalformedAnswer("Missing database name"));
-                    let desc = get_argument!(arguments, 1, DICTError::MalformedAnswer("Missing database description"));
+                    let name = get_argument!(
+                        arguments,
+                        0,
+                        DICTError::MalformedAnswer("Missing database name")
+                    );
+                    let desc = get_argument!(
+                        arguments,
+                        1,
+                        DICTError::MalformedAnswer("Missing database description")
+                    );
 
                     dbs.push(Database {
                         name: name.to_owned(),
-                        desc: desc.to_owned()
+                        desc: desc.to_owned(),
                     });
                 }
 
                 Some(Ok(DICTPacket(DICTPacketKind::Databases(dbs), reply)))
-            },
+            }
 
             // SHOW STRAT command
-            Status(
-                ReplyKind::PositivePreliminary,
-                Category::Information,
-                1
-                ) => {
+            Status(ReplyKind::PositivePreliminary, Category::Information, 1) => {
                 let mut strats: Vec<Strategy> = Vec::new();
                 for strat_def in self.read_raw_text() {
                     let arguments = parse_cmd_argument(&strat_def);
-                    let name = get_argument!(arguments, 0, DICTError::MalformedAnswer("Missing database name"));
-                    let desc = get_argument!(arguments, 1, DICTError::MalformedAnswer("Missing database description"));
+                    let name = get_argument!(
+                        arguments,
+                        0,
+                        DICTError::MalformedAnswer("Missing database name")
+                    );
+                    let desc = get_argument!(
+                        arguments,
+                        1,
+                        DICTError::MalformedAnswer("Missing database description")
+                    );
 
                     strats.push(Strategy {
                         name: name.to_owned(),
-                        desc: desc.to_owned()
+                        desc: desc.to_owned(),
                     });
                 }
 
                 Some(Ok(DICTPacket(DICTPacketKind::Strategies(strats), reply)))
-            },
+            }
             ref r if r.is_positive() => Some(Ok(DICTPacket(DICTPacketKind::ReplyOnly, reply))),
-            _ => Some(Err(DICTError::SystemError(reply)))
+            _ => Some(Err(DICTError::SystemError(reply))),
         }
     }
 }

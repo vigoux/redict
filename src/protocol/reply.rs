@@ -1,15 +1,15 @@
-use crate::status::{Status, ParseStatusError};
+use crate::status::{ParseStatusError, Status};
 use std::io::BufRead;
 use std::str::FromStr;
 use std::string::ToString;
 
-use std::fmt::Display;
 use std::error::Error;
+use std::fmt::Display;
 
 #[derive(Debug)]
 pub enum ParseReplyError {
     Status(ParseStatusError),
-    FailedToRead
+    FailedToRead,
 }
 
 impl Display for ParseReplyError {
@@ -22,7 +22,7 @@ impl Error for ParseReplyError {
     fn description(&self) -> &str {
         match self {
             Self::Status(_) => "An error when parsing status",
-            Self::FailedToRead => "Impossible to read"
+            Self::FailedToRead => "Impossible to read",
         }
     }
 
@@ -38,11 +38,14 @@ impl Error for ParseReplyError {
 #[derive(Clone, Debug)]
 pub struct Reply {
     pub status: Status,
-    pub text: String
+    pub text: String,
 }
 
 impl Reply {
-    pub fn from_reader<T>(r: &mut T) -> Result<Self, ParseReplyError> where T: BufRead {
+    pub fn from_reader<T>(r: &mut T) -> Result<Self, ParseReplyError>
+    where
+        T: BufRead,
+    {
         // Assumes that we are actually reading a reply
         let mut iter = r.lines().filter_map(|l| l.ok());
 
@@ -61,15 +64,13 @@ impl Reply {
 
         Ok(Reply {
             status,
-            text: String::from(text.trim())
+            text: String::from(text.trim()),
         })
     }
 }
 
 impl ToString for Reply {
     fn to_string(&self) -> String {
-        String::from(
-            format!("{} {}", self.status, self.text)
-            )
+        String::from(format!("{} {}", self.status, self.text))
     }
 }
