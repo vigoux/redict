@@ -206,7 +206,7 @@ fn main() -> Result<(), io::Error> {
 
         if let Some(Ok(evt)) = stdin.next() {
             match evt {
-                Key::Esc => { break ;},
+                Key::Esc | Key::Ctrl('c') | Key::Ctrl('q') => { break ;},
 
                 // Scrolling
                 Key::PageUp => {
@@ -239,6 +239,12 @@ fn main() -> Result<(), io::Error> {
                 },
                 Key::Right => {
                     app.searched.move_cursor(CursorDirection::Right)
+                },
+                Key::Ctrl('b') | Key::Home => {
+                    app.searched.move_cursor(CursorDirection::First)
+                },
+                Key::Ctrl('e') | Key::End => {
+                    app.searched.move_cursor(CursorDirection::Last)
                 }
 
                 // History management

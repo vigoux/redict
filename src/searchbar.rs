@@ -9,7 +9,9 @@ use unicode_segmentation::UnicodeSegmentation;
 
 pub enum CursorDirection {
     Left,
-    Right
+    Right,
+    First,
+    Last
 }
 
 pub struct SearchBar {
@@ -71,10 +73,6 @@ impl SearchBar {
         &self.text
     }
 
-    pub fn cursor(&self) -> usize {
-        self.cursor
-    }
-
     // Cursor manipulation
     pub fn move_cursor(&mut self, dir: CursorDirection) {
         match dir {
@@ -87,12 +85,14 @@ impl SearchBar {
                 if self.cursor < self.graphemes_nr() {
                     self.cursor += 1;
                 }
+            },
+            CursorDirection::First => {
+                self.cursor = 0;
+            },
+            CursorDirection::Last => {
+                self.cursor = self.graphemes_nr();
             }
         }
-    }
-
-    pub fn set_cursor(&mut self, index: usize) {
-        self.cursor = index.min(self.graphemes_nr());
     }
 
     // Text manipulation

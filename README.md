@@ -51,6 +51,8 @@ There are generic key bindings :
 | `Enter` | Refreshes current mode, possibly using the currently searched term |
 | `Left` | Move search bar cursor to the left |
 | `Right` | Move search bar cursor to the right |
+| `Home` | Move cursor to the start of the search bar |
+| `End` | Move cursor to the end of the search bar |
 
 Moreover, you can use your keyboard to edit the search bar direclty,
 that is anything typed will be added to the search bar.
@@ -92,8 +94,8 @@ I would like to:
 
 - [x] Basically working binary and library
 - [ ] Have a better search bar
-  - [ ] Database filtering in `Define` and `Match` mode using `database:db` or `db:db`
-  - [ ] Strategy picking in `Match` mode using `strat:` or `strategy:`
+  - [x] Database filtering in `Define` and `Match` mode using `@db`
+  - [x] Strategy picking in `Match` mode using `:strategy`
   - [ ] Completions
 - [ ] Enhanced `Info` mode, that englobes `Databases` and `Strategies`, and other informations
 - [ ] `Command` mode, to send raw commands
