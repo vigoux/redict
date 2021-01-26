@@ -116,10 +116,9 @@ compliant :
   - [ ] `SERVER`
 - [x] `CLIENT`
 - [ ] `STATUS`
-- [ ] `QUIT`
+- [x] `QUIT`
 - [ ] `OPTION MIME` (and it will never be)
 - [ ] `AUTH`
 - [ ] SASL
 
-For now, this tool does not read `dict` URLs, either, but will in the future.
 It also does not pipelines the requests, as this is not needed in interactive use.

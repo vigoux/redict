@@ -4,6 +4,7 @@ use crate::status::{Category, ReplyKind, Status};
 use std::convert::From;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::net::TcpStream;
+use std::ops::Drop;
 
 #[derive(Debug)]
 pub enum DICTError {
@@ -15,6 +16,18 @@ pub enum DICTError {
     NoAnswer,
     ReadWriteError(std::io::Error),
     MalformedAnswer(&'static str),
+}
+
+impl From<ParseReplyError> for DICTError {
+    fn from(src: ParseReplyError) -> Self {
+        DICTError::ReplyError(src)
+    }
+}
+
+impl From<std::io::Error> for DICTError {
+    fn from(src: std::io::Error) -> Self {
+        DICTError::ReadWriteError(src)
+    }
 }
 
 pub type DICTResult<T> = Result<(T, Reply), DICTError>;
@@ -389,14 +402,8 @@ impl Iterator for DICTConnection {
     }
 }
 
-impl From<ParseReplyError> for DICTError {
-    fn from(src: ParseReplyError) -> Self {
-        DICTError::ReplyError(src)
-    }
-}
-
-impl From<std::io::Error> for DICTError {
-    fn from(src: std::io::Error) -> Self {
-        DICTError::ReadWriteError(src)
+impl Drop for DICTConnection {
+    fn drop(&mut self) {
+        writeln!(self.output, "QUIT").ok();
     }
 }
