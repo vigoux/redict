@@ -88,7 +88,7 @@ fn parse_search_bar(src: &String) -> (String, Database, Strategy) {
     let mut db: Option<Database> = None;
     let mut strat: Option<Strategy> = None;
 
-    for part in src.split_whitespace() {
+    for part in src.split_ascii_whitespace() {
         match part.get(0..1) {
             Some("@") if db.is_none() => {
                 db = Some(Database::from(part.get(1..).unwrap().to_string()));
@@ -96,12 +96,12 @@ fn parse_search_bar(src: &String) -> (String, Database, Strategy) {
             Some(":") if strat.is_none() => {
                 strat = Some(Strategy::from(part.get(1..).unwrap().to_string()));
             }
-            Some(_) => { 
+            _ => {
                 if !word.is_empty() {
                     word.push_str(" ");
                 }
-                word.push_str(part); },
-            None => {}
+                word.push_str(part);
+            },
         }
     }
 
